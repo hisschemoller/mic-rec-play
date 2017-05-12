@@ -1,0 +1,7 @@
+{
+    "name": "mic-rec-play",
+    "private": true,
+    "dependencies": {
+        "polymer": "Polymer/polymer#2"
+    }
+}
