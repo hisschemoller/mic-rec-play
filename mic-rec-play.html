@@ -1,21 +1,15 @@
 <link rel="import" href="bower_components/polymer/polymer-element.html">
 
 <dom-module id="mic-rec-play">
-    <style>
-        :host {
-            background-color: #f00;
-            display: block;
-            height: 100px;
-            width: 100px;
-        }
-        ::slotted {
-            background-color: #ff0;
-        }
-    </style>
     <template>
-        <div>
-            <slot></slot>
-        </div>
+        <style>
+            :host {
+                display: block;
+                height: 100px;
+                width: 100px;
+            }
+        </style>
+        <canvas></canvas>
     </template>
     <script>
 
@@ -24,18 +18,53 @@
             static get is() {
                 return 'mic-rec-play';
             }
-
-            constructor() {
-                super();
-                // this.textContent = "I'm a custom-element.";
+            
+            ready() {
+                super.ready();
+                this.canvas = this.shadowRoot.querySelector('canvas');
+                this.cCtx = this.canvas.getContext('2d');
+                this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                let self = this;
+                navigator.mediaDevices.getUserMedia({
+                        audio: true
+                    })
+                    .then(function(stream) {
+                        self.startMicrophone(stream);
+                    })
+                    .catch(function(err) {
+                        console.log(err.name, ': ', err.message); 
+                    });
             }
 
             connectedCallback() {
                 super.connectedCallback();
+                this.canvas.addEventListener('mousedown', this.onMouseDown);
+                this.canvas.addEventListener('mouseup', this.onMouseUp);
+            }
+
+            disconnectedCallback() {
+                super.disconnectedCallback();
+                this.canvas.removeEventListener('mousedown', this.onMouseDown);
+                this.canvas.removeEventListener('mouseup', this.onMouseUp);
+            }
+            
+            onMouseDown(e) {
+                console.log(e);
+            }
+            
+            onMouseUp(e) {
+                console.log(e);
+            }
+            
+            startMicrophone(stream) {
+                this.scriptPocessor = this.aCtx.createScriptProcessor(BUFF_SIZE_RENDERER, 1, 1);
+                this.scriptPocessor.onaudioprocess = process_microphone_buffer;
+                this.streamSrc = this.aCtx.createMediaStreamSource(stream);
+                this.streamSrc.connect(this.scriptPocessor);
             }
         }
-
-        // Register custom element definition using standard platform API
+        
         customElements.define(MicRecPlay.is, MicRecPlay);
 
     </script>
