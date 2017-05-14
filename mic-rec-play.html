@@ -24,13 +24,18 @@
                 this.canvas = this.shadowRoot.querySelector('canvas');
                 this.cCtx = this.canvas.getContext('2d');
                 this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
+                this.bufferSize = 2 * this.aCtx.sampleRate;
+                this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
+                this.isRecording = false;
+                this.bufferIndex = 0;
+                this.mediaStream;
                 
                 let self = this;
                 navigator.mediaDevices.getUserMedia({
                         audio: true
                     })
                     .then(function(stream) {
-                        self.startMicrophone(stream);
+                        self.mediaStream = stream;
                     })
                     .catch(function(err) {
                         console.log(err.name, ': ', err.message); 
@@ -39,29 +44,72 @@
 
             connectedCallback() {
                 super.connectedCallback();
-                this.canvas.addEventListener('mousedown', this.onMouseDown);
-                this.canvas.addEventListener('mouseup', this.onMouseUp);
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+                document.addEventListener('keydown', this.onKeyDown.bind(this));
+                document.addEventListener('keyup', this.onKeyUp.bind(this));
             }
 
             disconnectedCallback() {
                 super.disconnectedCallback();
                 this.canvas.removeEventListener('mousedown', this.onMouseDown);
                 this.canvas.removeEventListener('mouseup', this.onMouseUp);
+                document.removeEventListener('keydown', this.onKeyDown.bind(this));
+                document.removeEventListener('keyup', this.onKeyUp.bind(this));
             }
             
             onMouseDown(e) {
-                console.log(e);
+                this.bufferIndex = 0;
+                this.isRecording = true;
+                this.initStream(this.mediaStream);
             }
             
             onMouseUp(e) {
-                console.log(e);
+                this.isRecording = false;
             }
             
-            startMicrophone(stream) {
-                this.scriptPocessor = this.aCtx.createScriptProcessor(BUFF_SIZE_RENDERER, 1, 1);
-                this.scriptPocessor.onaudioprocess = process_microphone_buffer;
+            onKeyDown(e) {
+                if (!this.bufferSourceNode) {
+                    this.bufferSourceNode = this.aCtx.createBufferSource();
+                    this.bufferSourceNode.buffer = this.audioBuffer;
+                    this.bufferSourceNode.connect(this.aCtx.destination);
+                    this.bufferSourceNode.start();
+                }
+            }
+            
+            onKeyUp(e) {
+                if (this.bufferSourceNode) {
+                    this.bufferSourceNode.stop();
+                    this.bufferSourceNode = null;
+                }
+            }
+            
+            initStream(stream) {
+                let self = this;
+                this.scriptPocessor = this.aCtx.createScriptProcessor(1024, 1, 1);
+                this.scriptPocessor.onaudioprocess = function(e) {
+                    self.onCaptureStream(e);
+                }
                 this.streamSrc = this.aCtx.createMediaStreamSource(stream);
                 this.streamSrc.connect(this.scriptPocessor);
+            }
+            
+            onCaptureStream(e) {
+                if (this.isRecording) {
+                    let inputArray = e.inputBuffer.getChannelData(0),
+                        bufferArray = this.audioBuffer.getChannelData(0),
+                        maxLevel = 0;
+                    for (let i = 0, n = inputArray.length; i < n; i++) {
+                        maxLevel = Math.max(maxLevel, inputArray[i]);
+                        if (this.bufferIndex < this.bufferSize) {
+                            bufferArray[this.bufferIndex] = inputArray[i];
+                            this.bufferIndex += 1;
+                        } else {
+                            this.isRecording = false;
+                        }
+                    }
+                    console.log(this.bufferIndex, maxLevel);
+                }
             }
         }
         
