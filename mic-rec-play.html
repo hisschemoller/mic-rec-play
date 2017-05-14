@@ -59,9 +59,13 @@
             }
             
             onMouseDown(e) {
-                this.bufferIndex = 0;
-                this.isRecording = true;
-                this.initStream(this.mediaStream);
+                // a short delay to avoid recording a possible mouse or trackpad click
+                let self = this;
+                setTimeout(function() {
+                    self.bufferIndex = 0;
+                    self.isRecording = true;
+                    self.initStream();
+                }, 100);
             }
             
             onMouseUp(e) {
