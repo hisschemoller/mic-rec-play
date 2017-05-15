@@ -4,9 +4,13 @@
     <template>
         <style>
             :host {
+                border: 1px solid #000;
                 display: block;
                 height: 100px;
                 width: 100px;
+            }
+            canvas {
+                cursor: pointer;
             }
         </style>
         <canvas></canvas>
@@ -102,10 +106,8 @@
             onCaptureStream(e) {
                 if (this.isRecording) {
                     let inputArray = e.inputBuffer.getChannelData(0),
-                        bufferArray = this.audioBuffer.getChannelData(0),
-                        maxLevel = 0;
+                        bufferArray = this.audioBuffer.getChannelData(0);
                     for (let i = 0, n = inputArray.length; i < n; i++) {
-                        maxLevel = Math.max(maxLevel, inputArray[i]);
                         if (this.isInputLevel) {
                             if (this.bufferIndex < this.bufferSize) {
                                 bufferArray[this.bufferIndex] = inputArray[i];
@@ -121,7 +123,7 @@
                         }
                         
                     }
-                    console.log(this.bufferIndex, maxLevel);
+                    console.log(this.bufferIndex);
                 }
             }
         }
