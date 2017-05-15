@@ -26,9 +26,10 @@
                 this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
                 this.bufferSize = 2 * this.aCtx.sampleRate;
                 this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
-                this.isRecording = false;
                 this.bufferIndex = 0;
                 this.mediaStream;
+                this.isRecording = false;
+                this.isInputLevel = false;
                 
                 let self = this;
                 navigator.mediaDevices.getUserMedia({
@@ -54,8 +55,8 @@
                 super.disconnectedCallback();
                 this.canvas.removeEventListener('mousedown', this.onMouseDown);
                 this.canvas.removeEventListener('mouseup', this.onMouseUp);
-                document.removeEventListener('keydown', this.onKeyDown.bind(this));
-                document.removeEventListener('keyup', this.onKeyUp.bind(this));
+                document.removeEventListener('keydown', this.onKeyDown);
+                document.removeEventListener('keyup', this.onKeyUp);
             }
             
             onMouseDown(e) {
@@ -64,6 +65,7 @@
                 setTimeout(function() {
                     self.bufferIndex = 0;
                     self.isRecording = true;
+                    self.isInputLevel = false;
                     self.initStream();
                 }, 100);
             }
@@ -88,13 +90,13 @@
                 }
             }
             
-            initStream(stream) {
+            initStream() {
                 let self = this;
                 this.scriptPocessor = this.aCtx.createScriptProcessor(1024, 1, 1);
                 this.scriptPocessor.onaudioprocess = function(e) {
                     self.onCaptureStream(e);
                 }
-                this.streamSrc = this.aCtx.createMediaStreamSource(stream);
+                this.streamSrc = this.aCtx.createMediaStreamSource(this.mediaStream);
                 this.streamSrc.connect(this.scriptPocessor);
             }
             
@@ -105,12 +107,20 @@
                         maxLevel = 0;
                     for (let i = 0, n = inputArray.length; i < n; i++) {
                         maxLevel = Math.max(maxLevel, inputArray[i]);
-                        if (this.bufferIndex < this.bufferSize) {
-                            bufferArray[this.bufferIndex] = inputArray[i];
-                            this.bufferIndex += 1;
+                        if (this.isInputLevel) {
+                            if (this.bufferIndex < this.bufferSize) {
+                                bufferArray[this.bufferIndex] = inputArray[i];
+                                this.bufferIndex += 1;
+                            } else {
+                                this.isRecording = false;
+                            }
                         } else {
-                            this.isRecording = false;
+                            // check for audio level treshold
+                            if (inputArray[i] > 0.1) {
+                                this.isInputLevel = true;
+                            }
                         }
+                        
                     }
                     console.log(this.bufferIndex, maxLevel);
                 }
