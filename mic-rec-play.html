@@ -27,7 +27,6 @@
                 this.bufferSize = 2 * this.aCtx.sampleRate;
                 this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
                 this.bufferIndex = 0;
-                this.mediaStream;
                 this.isRecording = false;
                 this.isInputLevel = false;
                 
@@ -36,7 +35,8 @@
                         audio: true
                     })
                     .then(function(stream) {
-                        self.mediaStream = stream;
+                        self.streamSrc = self.aCtx.createMediaStreamSource(stream);
+                        self.initStream(stream);
                     })
                     .catch(function(err) {
                         console.log(err.name, ': ', err.message); 
@@ -66,7 +66,6 @@
                     self.bufferIndex = 0;
                     self.isRecording = true;
                     self.isInputLevel = false;
-                    self.initStream();
                 }, 100);
             }
             
@@ -96,7 +95,6 @@
                 this.scriptPocessor.onaudioprocess = function(e) {
                     self.onCaptureStream(e);
                 }
-                this.streamSrc = this.aCtx.createMediaStreamSource(this.mediaStream);
                 this.streamSrc.connect(this.scriptPocessor);
             }
             
