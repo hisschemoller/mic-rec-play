@@ -92,6 +92,7 @@
             initStream() {
                 let self = this;
                 this.scriptPocessor = this.aCtx.createScriptProcessor(1024, 1, 1);
+                this.scriptPocessor.connect(this.aCtx.destination);
                 this.scriptPocessor.onaudioprocess = function(e) {
                     self.onCaptureStream(e);
                 }
