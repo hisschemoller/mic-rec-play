@@ -4,7 +4,6 @@
     <template>
         <style>
             :host {
-                border: 1px solid #000;
                 display: block;
                 height: 100px;
                 width: 100px;
@@ -25,8 +24,24 @@
             
             ready() {
                 super.ready();
+                this.initCanvas();
+                this.initAudio();
+            }
+            
+            initCanvas() {
+                this.radius = 50;
+                this.offColor = '#990000';
+                this.recColor = '#cc0000';
+                this.rdyColor = '#0000cc';
+                this.doublePI = Math.PI * 2;
                 this.canvas = this.shadowRoot.querySelector('canvas');
+                this.canvas.height = this.radius * 2;
+                this.canvas.width = this.radius * 2;
                 this.cCtx = this.canvas.getContext('2d');
+                this.draw();
+            }
+            
+            initAudio() {
                 this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
                 this.bufferSize = 2 * this.aCtx.sampleRate;
                 this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
@@ -40,7 +55,12 @@
                     })
                     .then(function(stream) {
                         self.streamSrc = self.aCtx.createMediaStreamSource(stream);
-                        self.initStream(stream);
+                        self.scriptPocessor = self.aCtx.createScriptProcessor(1024, 1, 1);
+                        self.scriptPocessor.connect(self.aCtx.destination);
+                        self.scriptPocessor.onaudioprocess = function(e) {
+                            self.onCaptureStream(e);
+                        }
+                        self.streamSrc.connect(self.scriptPocessor);
                     })
                     .catch(function(err) {
                         console.log(err.name, ': ', err.message); 
@@ -70,11 +90,13 @@
                     self.bufferIndex = 0;
                     self.isRecording = true;
                     self.isInputLevel = false;
+                    self.draw();
                 }, 100);
             }
             
             onMouseUp(e) {
                 this.isRecording = false;
+                this.draw();
             }
             
             onKeyDown(e) {
@@ -91,16 +113,6 @@
                     this.bufferSourceNode.stop();
                     this.bufferSourceNode = null;
                 }
-            }
-            
-            initStream() {
-                let self = this;
-                this.scriptPocessor = this.aCtx.createScriptProcessor(1024, 1, 1);
-                this.scriptPocessor.connect(this.aCtx.destination);
-                this.scriptPocessor.onaudioprocess = function(e) {
-                    self.onCaptureStream(e);
-                }
-                this.streamSrc.connect(this.scriptPocessor);
             }
             
             onCaptureStream(e) {
@@ -125,6 +137,13 @@
                     }
                     console.log(this.bufferIndex);
                 }
+            }
+            
+            draw() {
+                this.cCtx.fillStyle = this.isRecording ? this.recColor : this.offColor;
+                this.cCtx.arc(this.radius, this.radius, this.radius, 0, this.doublePI, true);
+                this.cCtx.fill();
+                
             }
         }
         
