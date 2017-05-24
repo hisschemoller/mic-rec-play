@@ -30,24 +30,33 @@
             
             initCanvas() {
                 this.radius = 50;
-                this.offColor = '#990000';
-                this.recColor = '#cc0000';
-                this.rdyColor = '#0000cc';
+                this.positionLineWidth = 10;
+                this.positionRadius = this.radius - (this.positionLineWidth / 2);
+                this.offColor = '#660000';
+                this.recColor = '#990000';
+                this.recPosColor = '#ff0000';
+                this.rdyColor = '#009900';
+                this.playPosColor = '#00cc00';
                 this.doublePI = Math.PI * 2;
+                this.arcStart = Math.PI * -0.5;
                 this.canvas = this.shadowRoot.querySelector('canvas');
                 this.canvas.height = this.radius * 2;
                 this.canvas.width = this.radius * 2;
                 this.cCtx = this.canvas.getContext('2d');
-                this.draw();
             }
             
             initAudio() {
                 this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
-                this.bufferSize = 2 * this.aCtx.sampleRate;
+                this.duration = 2;
+                this.bufferSize = this.duration * this.aCtx.sampleRate;
                 this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
                 this.bufferIndex = 0;
+                this.isPlaying = false;
                 this.isRecording = false;
                 this.isInputLevel = false;
+                this.isRecorded = false;
+                this.position = 0;
+                this.playStartTime = 0;
                 
                 let self = this;
                 navigator.mediaDevices.getUserMedia({
@@ -73,6 +82,7 @@
                 this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
                 document.addEventListener('keydown', this.onKeyDown.bind(this));
                 document.addEventListener('keyup', this.onKeyUp.bind(this));
+                this.draw();
             }
 
             disconnectedCallback() {
@@ -90,13 +100,11 @@
                     self.bufferIndex = 0;
                     self.isRecording = true;
                     self.isInputLevel = false;
-                    self.draw();
                 }, 100);
             }
             
             onMouseUp(e) {
                 this.isRecording = false;
-                this.draw();
             }
             
             onKeyDown(e) {
@@ -104,14 +112,19 @@
                     this.bufferSourceNode = this.aCtx.createBufferSource();
                     this.bufferSourceNode.buffer = this.audioBuffer;
                     this.bufferSourceNode.connect(this.aCtx.destination);
+                    this.bufferSourceNode.onended = function() {
+                        this.bufferSourceNode = null;
+                        this.isPlaying = false;
+                    }.bind(this);
                     this.bufferSourceNode.start();
+                    this.isPlaying = true;
+                    this.playStartTime = this.aCtx.currentTime;
                 }
             }
             
             onKeyUp(e) {
                 if (this.bufferSourceNode) {
                     this.bufferSourceNode.stop();
-                    this.bufferSourceNode = null;
                 }
             }
             
@@ -135,15 +148,31 @@
                         }
                         
                     }
-                    console.log(this.bufferIndex);
+                    console.log(this.bufferIndex, this.position);
                 }
             }
             
             draw() {
-                this.cCtx.fillStyle = this.isRecording ? this.recColor : this.offColor;
-                this.cCtx.arc(this.radius, this.radius, this.radius, 0, this.doublePI, true);
-                this.cCtx.fill();
-                
+                if (this.isConnected) {
+                    // background
+                    this.cCtx.fillStyle = this.isRecording ? this.recColor : (this.bufferIndex ? this.rdyColor : this.offColor);
+                    this.cCtx.arc(this.radius, this.radius, this.radius, 0, this.doublePI, true);
+                    this.cCtx.fill();
+                    // position
+                    if (this.isRecording || this.isPlaying) {
+                        if (this.isRecording) {
+                            this.position = this.bufferIndex / this.bufferSize;
+                        } else {
+                            this.position = (this.aCtx.currentTime - this.playStartTime) / this.duration;
+                        }
+                        this.cCtx.strokeStyle = this.isRecording ? this.recPosColor : this.playPosColor;
+                        this.cCtx.lineWidth = this.positionLineWidth;
+                        this.cCtx.beginPath();
+                        this.cCtx.arc(this.radius, this.radius, this.positionRadius, this.arcStart, this.arcStart + (this.position * this.doublePI), false);
+                        this.cCtx.stroke();
+                    }
+                    window.requestAnimationFrame(this.draw.bind(this));
+                }
             }
         }
         
