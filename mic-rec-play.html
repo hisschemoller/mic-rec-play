@@ -42,6 +42,7 @@
             }
 
             initCanvas() {
+                this.isKeyDown = false;
                 this.radius = 50;
                 this.positionLineWidth = 10;
                 this.positionRadius = this.radius - (this.positionLineWidth / 2);
@@ -126,7 +127,7 @@
 
             onKeyDown(e) {
                 if (e.which == this.keycode) {
-                    if (!this.bufferSourceNode) {
+                    if (!this.bufferSourceNode && !this.isKeyDown) {
                         this.bufferSourceNode = this.aCtx.createBufferSource();
                         this.bufferSourceNode.buffer = this.audioBuffer;
                         this.bufferSourceNode.connect(this.aCtx.destination);
@@ -137,6 +138,7 @@
                         }.bind(this);
                         this.bufferSourceNode.start();
                         this.isPlaying = true;
+                        this.isKeyDown = true;
                         this.playStartTime = this.aCtx.currentTime;
                     }
                 }
@@ -148,6 +150,7 @@
                         this.bufferSourceNode.stop();
                         this.bufferSourceNode.disconnect(this.analyser);
                     }
+                    this.isKeyDown = false;
                 }
             }
 
