@@ -27,6 +27,10 @@
                     duration: {
                         type: Number,
                         value: 2
+                    },
+                    keycode: {
+                        type: String,
+                        value: null
                     }
                 }
             }
@@ -55,7 +59,6 @@
             }
 
             initAudio() {
-                console.log(this.duration);
                 this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
                 this.bufferSize = this.duration * this.aCtx.sampleRate;
                 this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
@@ -122,25 +125,29 @@
             }
 
             onKeyDown(e) {
-                if (!this.bufferSourceNode) {
-                    this.bufferSourceNode = this.aCtx.createBufferSource();
-                    this.bufferSourceNode.buffer = this.audioBuffer;
-                    this.bufferSourceNode.connect(this.aCtx.destination);
-                    this.bufferSourceNode.connect(this.analyser);
-                    this.bufferSourceNode.onended = function() {
-                        this.bufferSourceNode = null;
-                        this.isPlaying = false;
-                    }.bind(this);
-                    this.bufferSourceNode.start();
-                    this.isPlaying = true;
-                    this.playStartTime = this.aCtx.currentTime;
+                if (e.which == this.keycode) {
+                    if (!this.bufferSourceNode) {
+                        this.bufferSourceNode = this.aCtx.createBufferSource();
+                        this.bufferSourceNode.buffer = this.audioBuffer;
+                        this.bufferSourceNode.connect(this.aCtx.destination);
+                        this.bufferSourceNode.connect(this.analyser);
+                        this.bufferSourceNode.onended = function() {
+                            this.bufferSourceNode = null;
+                            this.isPlaying = false;
+                        }.bind(this);
+                        this.bufferSourceNode.start();
+                        this.isPlaying = true;
+                        this.playStartTime = this.aCtx.currentTime;
+                    }
                 }
             }
 
             onKeyUp(e) {
-                if (this.bufferSourceNode) {
-                    this.bufferSourceNode.stop();
-                    this.bufferSourceNode.disconnect(this.analyser);
+                if (e.which == this.keycode) {
+                    if (this.bufferSourceNode) {
+                        this.bufferSourceNode.stop();
+                        this.bufferSourceNode.disconnect(this.analyser);
+                    }
                 }
             }
 
@@ -163,7 +170,6 @@
                                 this.isInputLevel = true;
                             }
                         }
-
                     }
                 }
             }
