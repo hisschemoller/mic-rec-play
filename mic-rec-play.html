@@ -21,13 +21,22 @@
             static get is() {
                 return 'mic-rec-play';
             }
-            
+
+            static get properties() {
+                return {
+                    duration: {
+                        type: Number,
+                        value: 2
+                    }
+                }
+            }
+
             ready() {
                 super.ready();
                 this.initCanvas();
                 this.initAudio();
             }
-            
+
             initCanvas() {
                 this.radius = 50;
                 this.positionLineWidth = 10;
@@ -44,10 +53,10 @@
                 this.canvas.width = this.radius * 2;
                 this.cCtx = this.canvas.getContext('2d');
             }
-            
+
             initAudio() {
+                console.log(this.duration);
                 this.aCtx = new (window.AudioContext || window.webkitAudioContext)();
-                this.duration = 2;
                 this.bufferSize = this.duration * this.aCtx.sampleRate;
                 this.audioBuffer = this.aCtx.createBuffer(1, this.bufferSize, this.aCtx.sampleRate);
                 this.bufferIndex = 0;
@@ -60,7 +69,7 @@
                 this.analyser = this.aCtx.createAnalyser();
                 this.analyser.fftSize = 32;
                 this.analyserBuffer = new Uint8Array(this.analyser.frequencyBinCount);
-                
+
                 let self = this;
                 navigator.mediaDevices.getUserMedia({
                         audio: true
@@ -75,7 +84,7 @@
                         self.streamSrc.connect(self.scriptPocessor);
                     })
                     .catch(function(err) {
-                        console.log(err.name, ': ', err.message); 
+                        console.log(err.name, ': ', err.message);
                     });
             }
 
@@ -95,7 +104,7 @@
                 document.removeEventListener('keydown', this.onKeyDown);
                 document.removeEventListener('keyup', this.onKeyUp);
             }
-            
+
             onMouseDown(e) {
                 // a short delay to avoid recording a possible mouse or trackpad click
                 let self = this;
@@ -106,12 +115,12 @@
                     self.streamSrc.connect(self.analyser);
                 }, 100);
             }
-            
+
             onMouseUp(e) {
                 this.isRecording = false;
                 this.streamSrc.disconnect(this.analyser);
             }
-            
+
             onKeyDown(e) {
                 if (!this.bufferSourceNode) {
                     this.bufferSourceNode = this.aCtx.createBufferSource();
@@ -127,14 +136,14 @@
                     this.playStartTime = this.aCtx.currentTime;
                 }
             }
-            
+
             onKeyUp(e) {
                 if (this.bufferSourceNode) {
                     this.bufferSourceNode.stop();
                     this.bufferSourceNode.disconnect(this.analyser);
                 }
             }
-            
+
             onCaptureStream(e) {
                 if (this.isRecording) {
                     let inputArray = e.inputBuffer.getChannelData(0),
@@ -147,27 +156,27 @@
                             } else {
                                 this.isRecording = false;
                             }
-                            
+
                         } else {
                             // check for audio level treshold
                             if (inputArray[i] > 0.1) {
                                 this.isInputLevel = true;
                             }
                         }
-                        
+
                     }
                 }
             }
-            
+
             draw() {
                 if (this.isConnected) {
                     // background
                     this.cCtx.fillStyle = this.isRecording ? this.recColor : (this.bufferIndex ? this.rdyColor : this.offColor);
                     this.cCtx.arc(this.radius, this.radius, this.radius, 0, this.doublePI, true);
                     this.cCtx.fill();
-                    
+
                     if (this.isRecording || this.isPlaying) {
-                        
+
                         // position
                         if (this.isRecording) {
                             this.position = this.bufferIndex / this.bufferSize;
@@ -179,7 +188,7 @@
                         this.cCtx.beginPath();
                         this.cCtx.arc(this.radius, this.radius, this.positionRadius, this.arcStart, this.arcStart + (this.position * this.doublePI), false);
                         this.cCtx.stroke();
-                        
+
                         // level
                         this.analyser.getByteFrequencyData(this.analyserBuffer);
                         let average = 0;
@@ -196,7 +205,7 @@
                 }
             }
         }
-        
+
         customElements.define(MicRecPlay.is, MicRecPlay);
 
     </script>
