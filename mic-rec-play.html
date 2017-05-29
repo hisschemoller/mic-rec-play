@@ -161,17 +161,28 @@
                     for (let i = 0, n = inputArray.length; i < n; i++) {
                         if (this.isInputLevel) {
                             if (this.bufferIndex < this.bufferSize) {
+                                // record incoming audio
                                 bufferArray[this.bufferIndex] = inputArray[i];
                                 this.bufferIndex += 1;
                             } else {
+                                // buffer fully recorded
                                 this.isRecording = false;
                             }
 
                         } else {
-                            // check for audio level treshold
+                            // wait for audio level to exceed treshold
                             if (inputArray[i] > 0.1) {
                                 this.isInputLevel = true;
                             }
+                        }
+                    }
+                } else {
+                    // if recording stopped, fill the remaining buffer with silence
+                    if (this.bufferIndex < this.bufferSize) {
+                        let bufferArray = this.audioBuffer.getChannelData(0);
+                        for (let i = this.bufferIndex, n = this.bufferSize; i < n; i++) {
+                            bufferArray[this.bufferIndex] = 0;
+                            this.bufferIndex += 1;
                         }
                     }
                 }
