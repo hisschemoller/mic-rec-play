@@ -6,3 +6,6 @@ body {
     margin: 0 auto;
     font-family: 'Helvetica Neue', sans-serif;
 }
+mic-rec-play {
+    float: left;
+}
