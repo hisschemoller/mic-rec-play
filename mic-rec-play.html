@@ -190,7 +190,7 @@
                     }
                 } else {
                     // if recording stopped, fill the remaining buffer with silence
-                    if (this.bufferIndex < this.bufferSize) {
+                    if (this.bufferIndex > 0 && this.bufferIndex < this.bufferSize) {
                         let bufferArray = this.audioBuffer.getChannelData(0);
                         for (let i = this.bufferIndex, n = this.bufferSize; i < n; i++) {
                             bufferArray[this.bufferIndex] = 0;
