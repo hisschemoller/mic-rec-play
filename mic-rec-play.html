@@ -4,15 +4,26 @@
     <template>
         <style>
             :host {
-                display: block;
+                align-items: center;
+                display: flex;
                 height: 100px;
+                justify-content: center;
+                position: relative;
                 width: 100px;
             }
             canvas {
                 cursor: pointer;
             }
+            h1 {
+                color: #fff;
+                cursor: pointer;
+                font-family: sans-serif;
+                margin: 0;
+                position: absolute;
+            }
         </style>
         <canvas></canvas>
+        <h1></h1>
     </template>
     <script>
 
@@ -29,7 +40,7 @@
                         value: 2
                     },
                     keycode: {
-                        type: String,
+                        type: Number,
                         value: 32
                     }
                 }
@@ -39,6 +50,7 @@
                 super.ready();
                 this.initCanvas();
                 this.initAudio();
+                this.shadowRoot.querySelector('h1').innerHTML = String.fromCharCode(this.keycode);
             }
 
             initCanvas() {
@@ -94,8 +106,8 @@
 
             connectedCallback() {
                 super.connectedCallback();
-                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-                this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+                this.addEventListener('mousedown', this.onMouseDown.bind(this));
+                this.addEventListener('mouseup', this.onMouseUp.bind(this));
                 document.addEventListener('keydown', this.onKeyDown.bind(this));
                 document.addEventListener('keyup', this.onKeyUp.bind(this));
                 this.draw();
@@ -103,8 +115,8 @@
 
             disconnectedCallback() {
                 super.disconnectedCallback();
-                this.canvas.removeEventListener('mousedown', this.onMouseDown);
-                this.canvas.removeEventListener('mouseup', this.onMouseUp);
+                this.removeEventListener('mousedown', this.onMouseDown);
+                this.removeEventListener('mouseup', this.onMouseUp);
                 document.removeEventListener('keydown', this.onKeyDown);
                 document.removeEventListener('keyup', this.onKeyUp);
             }
