@@ -139,7 +139,7 @@
 
             onKeyDown(e) {
                 if (e.which == this.keycode) {
-                    if (!this.bufferSourceNode && !this.isKeyDown) {
+                    if (!this.bufferSourceNode && !this.isKeyDown && this.isRecorded) {
                         this.bufferSourceNode = this.aCtx.createBufferSource();
                         this.bufferSourceNode.buffer = this.audioBuffer;
                         this.bufferSourceNode.connect(this.aCtx.destination);
@@ -183,8 +183,9 @@
 
                         } else {
                             // wait for audio level to exceed treshold
-                            if (inputArray[i] > 0.1) {
+                            if (inputArray[i] > 0.2) {
                                 this.isInputLevel = true;
+                                this.isRecorded = true;
                             }
                         }
                     }
